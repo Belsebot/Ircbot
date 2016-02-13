@@ -36,7 +36,7 @@ def avaaurl(osoite):
 	
 	for index in range(num_lines):
 		if alku in rivit[index]:
-			otsikko = etsi_title(rivit[index],etsi,loppu)
+			otsikko = etsi_title(rivit[index],alku,loppu)
 			return otsikko
 			break
 
