@@ -63,10 +63,10 @@ try:							#main loop
 		
 		print ircmsg
 
-		if ircmsg.find ("PING :") != -1:	#keep alive
+		if ircmsg.find ("PING :") != -1:		#keep alive
 			s.send("PONG :pingis\n")
 
-		if msg in ircmsg:			#if message holds wanted webpage
+		if msg in ircmsg:				#if message holds wanted webpage
 			urls = findall("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+", ircmsg)
 			if urls:							#if given message is url
 				print urls[0]
