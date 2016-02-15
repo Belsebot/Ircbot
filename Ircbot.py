@@ -16,17 +16,18 @@ ident="belsebot"
 realname="belsebot"
 chan="#"
 s=socket.socket()
+s.settimeout(400)
 
-def etsi_title(a,first,last):			#greps Title from webpage
+def etsi_title(a,first,last):				#Greps line which is between <title> and </title>
 	try:
-		start=a.index(first) + len(first)
-		end=a.index(last, start)
-		return a[start:end]		#returns whats between searched words
+		start=a.index( first ) + len( first )
+		end=a.index( last, start)
+		return a[start:end]
 	except ValueError:
 		return ""
 
 
-def avaaurl(osoite):				#opens given webpage
+def avaaurl(osoite):					#Loads given url and greps Title
 	alku = "<title>"
 	loppu = "</title>"
 
@@ -34,47 +35,70 @@ def avaaurl(osoite):				#opens given webpage
 	rivit=f.readlines()
 	num_lines=len(rivit)
 	
-	for index in range(num_lines):	
-		if alku in rivit[index]:					#search <title>
-			otsikko = etsi_title(rivit[index],alku,loppu)		#gets whats between <title> and </title>
-			return otsikko						#returns Title
+	for index in range(num_lines):
+		if alku in rivit[index]:
+			otsikko = etsi_title(rivit[index],alku,loppu)
+			return otsikko
 			break
 
 
-try:
-	s.connect((host, port))				#connect irc server
-	print "moro kukkuu"
-except Exception,e:
-	print "Connection failed"
-	print "meep %s" % Exception
-	print "meep2 %s" % e
+def ircconnect(host,port,name,ident,realname,chan):			#Irc connect
+	try:
+		s.connect((host, port))
+		print "moro kukkuu"
+		s.send("NICK %s\r\n" % name)
+		s.send("USER %s %s bla :%s\r\n" % (ident, host, realname))
+		s.send("JOIN :%s\r\n" % chan)
+	except Exception,socket.error:
+		print "Connection failed"
+		print "meep %s" % Exception
+		time.sleep(5)
+		ircconnect(host,port,name,ident,realname,chan)
 
-s.send("NICK %s\r\n" % name)
-s.send("USER %s %s bla :%s\r\n" % (ident, host, realname))
-s.send("JOIN :%s\r\n" % chan)				#joins channel
 
-msg="www.youtube.com"					#webpage where you want grep titles
+ircconnect(host,port,name,ident,realname,chan)
 
-try:							#main loop
-	while 1:
+msg="www.youtube.com"						#Message you want to lookup
 
-		ircmsg = s.recv (bufsize)		#gets messages
+while 1:
+	try:
+
+		ircmsg = s.recv (bufsize)
+
+		if len(ircmsg) == 0:
+			break
+
 		ircmsg = ircmsg.strip('\n\r')
-		
+
 		print ircmsg
 
 		if ircmsg.find ("PING :") != -1:		#keep alive
 			s.send("PONG :pingis\n")
 
-		if msg in ircmsg:				#if message holds wanted webpage
-			urls = findall("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+", ircmsg)
-			if urls:							#if given message is url
-				print urls[0]
-				viesti=avaaurl(urls[0])					
-				s.send("PRIVMSG %s :%s\r\n" % (chan, viesti))		#send title to channel
-	
-except KeyboardInterrupt:
-	s.send("PRIVMSG %s :%s\r\n" % (chan, "Heippa"))
-	print "sammutetaan bot"
+		if msg in ircmsg:				#if given string founds
+			urls = findall("http[s]?://www.youtube.com/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),])+",ircmsg)
+			url=len(urls)
+			if urls:				#if given url is correct
+				viesti=avaaurl(urls[0])		#gets title for given url
+				if viesti:			#if title is found
+					s.send("PRIVMSG %s :%s\r\n" % (chan, viesti))		#send title to channel
+				else:
+					s.send("PRIVMSG %s :%s\r\n" % (chan, "No title found"))	#else send not found
+
+		if ircmsg.find(":Belse!") != -1:		#if user Belse 
+			sulje = ircmsg.split(':',2)
+			if sulje[2]=="!quit":			#send message !quit
+				s.send("PRIVMSG %s :%s\r\n" % (chan, "Heippa"))	
+				print "sammutetaan bot"		#close bot
+				s.close()
+				break
+
+
+	except socket.timeout:
+		ircconnect(host,port,name,ident,realname,chan)
+		break
+
+
 
 s.close()
+
