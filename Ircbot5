@@ -14,24 +14,24 @@ from re import findall
 from random import randint
 
 
-bufsize=2048
-host="server"
-port=6667
-name="belsebot"
+bufsize=2048				# buffer size
+host="server"				# Irc server 
+port=6667				# Irc port
+name="belsebot"				# Bots name
 ident="belsebot"
 realname="belsebot"
-chan="#channel"
+chan="#channel"				# Irc Channel
 
-def term_received(sig,frame):
+def term_received(sig,frame):							# When system gets shutdown signal bot will send it to the irc channel
 	s.send("PRIVMSG %s :%s\r\n" % (chan,"Jarjestelma Sammutetaan"))
 	s.close()
 	sys.exit(0)
 	return
 
 
-def check_weather(location):
+def check_weather(location):							# Openweathermap function which fetch weather information
 
-	key="opentweatherapikey"
+	key="opentweatherapikey"						# Your openweathermap key to the access their service
 
 	url = "https://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid={}".format(location,key)
 	r = requests.get(url)
@@ -51,7 +51,7 @@ def check_weather(location):
 	return temp,humi
 
 
-def checksize(uri):
+def checksize(uri):							# Checks page sizes
 #	print "checksize"
 	headers={ 'User-Agent' : 'Mozilla/5.0' }
 	try:
@@ -76,9 +76,9 @@ def checksize(uri):
 		size=-1
 		return int(size)
 
-def etsi_title(a):
+def etsi_title(a):						# Greps page Title
 #	print "etsititle"
-	first="<meta property=\"og:title\" content=\""
+	first="<meta property=\"og:title\" content=\""		# New meta property field which holds title instead of <title>
 	last="\""
 
 	try:
@@ -89,7 +89,7 @@ def etsi_title(a):
 		return ""
 
 
-def filter_title(title):
+def filter_title(title):					# Filter titles special characters
 	mappaus={'&#034;':'"',
 		'&quot;':'"',
 		'http://':'meep',
@@ -106,7 +106,7 @@ def filter_title(title):
 
 	return title
 
-def avaaurl(osoite):
+def avaaurl(osoite):						# Opens url
 #	print "avaaurl"
 
 	headers={ 'User-Agent' : 'Mozilla/5.0' }
@@ -126,7 +126,7 @@ def avaaurl(osoite):
 		print "vamma esto",e
 
 
-def ircconnect(host,port,name,ident,realname,chan):
+def ircconnect(host,port,name,ident,realname,chan):		# Connecting bot to irc server
 	global s
 	s=socket.socket()
 	s.settimeout(400)
@@ -147,8 +147,8 @@ def ircconnect(host,port,name,ident,realname,chan):
 		ircconnect(host,port,name,ident,realname,chan)
 
 
-def viisaudet():
-	global lista
+def viisaudet():						# Words of wisdom function that will randomly post words of wisdom when someone
+	global lista						# send !viisaus word to channel
 	global vituttaa
 	global utstats
 	global viisaus_num
@@ -164,7 +164,7 @@ def viisaudet():
 	utstats="Mita niita suotta katsomaan kun tiedetaan etta Belse on paras"
 
 
-def ircloop():
+def ircloop():							# Irc loop that keeps bot connected to the channel
 #	print "Ircloop"
 	check=0
 	msg = [None]*5
@@ -174,7 +174,7 @@ def ircloop():
 	msg[3]=":8000/"
 	msg[4]=":80/"
 
-	viisaudet()
+	viisaudet()						# reloads Wisdoms
 
 	while 1:
 		try:
@@ -186,29 +186,29 @@ def ircloop():
 
 			ircmsg = ircmsg.strip('\n\r')
 
-#			print ircmsg
+#			print ircmsg					# debug
 
 			if ircmsg.find ("PING :") != -1:
 				s.send("PONG :pingis\n")
 
-			urls = findall("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+", ircmsg)
+			urls = findall("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+", ircmsg)	# grep Url
 
-			if urls:
-#				print urls[0]
+			if urls:									# When someone posts url to channel
+#				print urls[0]				# debug		
 
-				if msg[0] in urls[0]:
+				if msg[0] in urls[0]:									# Checks if it .gif
 					s.send("PRIVMSG %s :%s\r\n" % (chan,"onkos toi nyt sitten joku gif"))
-				elif msg[1] in urls[0]:
-					s.send("PRIVMSG %s :%s\r\n" % (chan,"ei tassa nyt romaaneja ruveta lukemaan"))
-				elif msg[2] in urls[0]:
+				elif msg[1] in urls[0]:									# or .pdf
+					s.send("PRIVMSG %s :%s\r\n" % (chan,"ei tassa nyt romaaneja ruveta lukemaan")) 
+				elif msg[2] in urls[0]:									# or .jpg
 					s.send("PRIVMSG %s :%s\r\n" % (chan,"toi on kylla jpg"))
-				elif msg[3] in urls[0]:
+				elif msg[3] in urls[0]:									# or music server
 					s.send("PRIVMSG %s :%s\r\n" % (chan,"puuuuh"))
 				elif msg[4] in urls[0]:
 					s.send("PRIVMSG %s :%s\r\n" % (chan,"puuuuuuh"))
 				else:
 
-					koko=checksize(urls[0])
+					koko=checksize(urls[0])								# Checks url size
 					if koko != -1:
 						maxsize=1000000
 						print koko
@@ -216,20 +216,20 @@ def ircloop():
 						if koko>maxsize:
 							s.send("PRIVMSG %s :%s\r\n" % (chan, "Liian iso"))
 						else:
-							viesti=avaaurl(urls[0])
-							viesti=filter_title(viesti)
+							viesti=avaaurl(urls[0])						# Opens pages and
+							viesti=filter_title(viesti)					# greps page title
 							if viesti:
-								s.send("PRIVMSG %s :%s\r\n" % (chan, viesti))
+								s.send("PRIVMSG %s :%s\r\n" % (chan, viesti))		# and send it to channel
 							else:
 								s.send("PRIVMSG %s :%s\r\n" % (chan, "No title found"))
 					else:
 						s.send("PRIVMSG %s :%s\r\n" % (chan, "Timeout tai joku vammainen badstatus tai muu vastaava"))
 
-			if ircmsg.find("!viisaus") != -1:
+			if ircmsg.find("!viisaus") != -1:					# Shows words of wisdom when someones sends !viisaus
 				num=randint(0,viisaus_num-1)
 				s.send("PRIVMSG %s :%s\r\n" % (chan, lista[num]))
 
-			if ircmsg.find("!temp") != -1:
+			if ircmsg.find("!temp") != -1:						# Shows cities weather information when someone sends !temp
 				try:
 					kaupunki = ircmsg.split()
 
@@ -245,16 +245,16 @@ def ircloop():
 			if ircmsg.find("!utstat") != -1:
 				s.send("PRIVMSG %s :%s\r\n" % (chan, utstats))
 
-			if ircmsg.find(":Belse!") != -1:
+			if ircmsg.find(":Belse!") != -1:					# If User named Belse
 				try:
 					komento = ircmsg.split(':',2)
-					if komento[2]=="!quit":
-						s.send("PRIVMSG %s :%s\r\n" % (chan, "Heippa"))
+					if komento[2]=="!quit":					# sends !quit to channel
+						s.send("PRIVMSG %s :%s\r\n" % (chan, "Heippa")) # bot will shutdown
 						print "sammutetaan bot"
 						s.close()
 						break
-					if komento[2]=="!reload":
-						viisaudet()
+					if komento[2]=="!reload":				# or !reload 
+						viisaudet()					# bot will reload wisdoms
 						print "Viisaudet paivitetty"
 				except:
 					print ircmsg
